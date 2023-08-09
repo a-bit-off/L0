@@ -1,15 +1,17 @@
 package main
 
 import (
+	"L0/internal/http-server/handlers"
 	"flag"
 	"fmt"
-	"github.com/go-chi/chi/middleware"
 	"log"
 	"net/http"
 
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+
 	"L0/internal/config"
 	"L0/internal/storage/postgres"
-	"github.com/go-chi/chi"
 )
 
 func main() {
@@ -62,7 +64,10 @@ func initMiddleware(router chi.Router) {
 
 func initHandlers(cfg *config.Config, router *chi.Mux, storage *postgres.Storage) {
 	// TODO: handler
-	// router.Get("/{id}")
+	router.Get("/", handlers.StartGetIDPage)
+	router.Post("/", handlers.StartGetID(storage))
+
+	router.Get("/order", handlers.OrderDetailsPage(nil))
 }
 
 func runServer(cfg *config.Config, router *chi.Mux) {

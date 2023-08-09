@@ -46,3 +46,17 @@ func New(connectionString string) (*Storage, error) {
 
 	return &Storage{db: db}, nil
 }
+
+func (s Storage) GetById(id string) ([]byte, error) {
+	const op = "storage.postgres.GetById"
+
+	var jsonB []byte
+	err := s.db.QueryRow(storage.GetByIdFromOrders, id).Scan(&jsonB)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return jsonB, fmt.Errorf("%s: %s", op, err)
+		}
+	}
+
+	return jsonB, nil
+}

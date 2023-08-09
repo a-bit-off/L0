@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Single Input Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            form {
+                max-width: 90%;
+            }
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+    </style>
+</head>
+<body>
+<h1>Find order by ID</h1>
+<form method="POST" action="/">
+    <input type="text" id="inputField" name="orderID" placeholder="Enter your ID" required>
+    <button type="submit">Submit</button>
+</form>
+
+<!-- Всплывающее окно с ошибкой -->
+<div class="popup" id="errorPopup">
+    <p id="errorMessage">An error occurred.</p>
+</div>
+
+<script>
+    // Функция для показа всплывающего окна с сообщением об ошибке
+    function showErrorPopup(message) {
+        var popup = document.getElementById("errorPopup");
+        var errorMessage = document.getElementById("errorMessage");
+        errorMessage.textContent = message;
+        popup.style.display = "block";
+
+        // Скрыть окно через 2 секунды
+        setTimeout(function() {
+            popup.style.display = "none";
+        }, 2000);
+    }
+</script>
+
+</body>
+
+</html>
