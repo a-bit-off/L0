@@ -1,13 +1,11 @@
 package postgres
 
 import (
+	"L0/internal/storage"
 	"database/sql"
 	"fmt"
-	"log"
-
 	_ "github.com/lib/pq" // Импортируем драйвер PostgreSQL
-
-	"L0/internal/storage"
+	"log"
 )
 
 type Storage struct {
@@ -59,4 +57,24 @@ func (s Storage) GetById(id string) ([]byte, error) {
 	}
 
 	return jsonB, nil
+}
+
+func (s Storage) AddOrder(id, order string) error {
+	const op = "storage.sqlite.SaveURL"
+
+	stmt, err := s.db.Prepare(storage.InsertIntoOrders)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = stmt.Exec(id, []byte(order))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// Обработка случая с дублированным ключом
+			return fmt.Errorf("duplicate key: %s: %w", op, err)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }

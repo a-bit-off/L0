@@ -63,10 +63,18 @@ func initMiddleware(router chi.Router) {
 }
 
 func initHandlers(cfg *config.Config, router *chi.Mux, storage *postgres.Storage) {
-	// TODO: handler
-	router.Get("/", handlers.StartGetIDPage)
-	router.Post("/", handlers.StartGetID(storage))
+	// HOME
+	router.Get("/", handlers.HomePage)
 
+	// TODO: ADD
+	router.Get("/add", handlers.AddOrderPage)
+	router.Post("/add", handlers.AddOrder(storage))
+
+	// FIND
+	router.Get("/find", handlers.FindOrderByIDPage)
+	router.Post("/find", handlers.FindOrderByID(storage))
+
+	// ORDER DETAILS
 	router.Get("/order", handlers.OrderDetailsPage(nil))
 }
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Find order</title>
+    <title>Add new order</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -82,12 +82,13 @@
 </div>
 
 <div class="container">
-    <h1>Find order!</h1>
+    <h1>Add new order!</h1>
 
-    <form name="findOrder" method="post">
-        <textarea id="id" name="id" rows="2" cols="50" placeholder="Enter your ID"></textarea>
+    <form name="addOrder" method="post">
+        <textarea name="orderID" rows="2" cols="50" placeholder="Enter your ID"></textarea>
+        <textarea name="orderInfo" rows="5" cols="50" placeholder="Enter your order"></textarea>
 
-        <input type="submit" value="FIND">
+        <input type="submit" value="ADD">
     </form>
 
 </div>
