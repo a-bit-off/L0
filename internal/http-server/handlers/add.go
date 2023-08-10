@@ -2,32 +2,43 @@ package handlers
 
 import (
 	"L0/internal/storage/postgres"
+	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 )
 
 type AddPageData struct {
-	OrderID   string
-	OrderInfo string
+	OrderID     string
+	OrderInfo   string
+	ShowMessage bool
+	Message     string
 }
 
 // GET
-func AddOrderPage(w http.ResponseWriter, r *http.Request) {
-	orderID := r.URL.Query().Get("orderID")
-	orderInfo := r.URL.Query().Get("orderInfo")
-	data := AddPageData{OrderID: orderID, OrderInfo: orderInfo}
+func AddOrderPage(message string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		orderID := r.URL.Query().Get("orderID")
+		orderInfo := r.URL.Query().Get("orderInfo")
+		var showMessage bool
+		if message != "" {
+			showMessage = true
+		}
 
-	lp := filepath.Join("public", "html", "add.html")
-	tmpl, err := template.ParseFiles(lp)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	err = tmpl.Execute(w, data)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		data := AddPageData{OrderID: orderID, OrderInfo: orderInfo, ShowMessage: showMessage, Message: message}
+
+		lp := filepath.Join("public", "html", "add.html")
+		tmpl, err := template.ParseFiles(lp)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Internal Server Error: %s", err), http.StatusInternalServerError)
+			return
+		}
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -39,16 +50,18 @@ func AddOrder(storage *postgres.Storage) http.HandlerFunc {
 		orderInfo := r.FormValue("orderInfo")
 
 		if orderID == "" || orderInfo == "" {
-			AddOrderPage(w, r) // TODO: Повторно отображаем страницу с предупреждением
+			AddOrderPage("All fields must be filled!")(w, r)
 			return
 		}
 
 		err := storage.AddOrder(orderID, orderInfo)
 		if err != nil {
-			http.Error(w, "Error with add order", http.StatusInternalServerError)
+
+			log.Println(err)
+			AddOrderPage(err.Error())(w, r)
 			return
 		}
 
-		// TODO: Дать понять что все ок!
+		AddOrderPage("Order added successfully!")(w, r)
 	}
 }

@@ -73,6 +73,29 @@
             cursor: pointer;
             text-decoration: none;
         }
+
+
+        .message {
+            color: black; /* Черный текст */
+            background-color: white; /* Белый фон */
+            border: 1px solid #000; /* Тонкая черная рамка */
+            padding: 10px 20px; /* Отступы сверху и снизу 10px, слева и справа 20px */
+            border-radius: 3px; /* Закругление углов */
+            border-color: gray;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5); /* Тень */
+            position: absolute; /* Абсолютное позиционирование */
+            top: 50%; /* Положение сверху */
+            left: 50%; /* Положение слева */
+            transform: translate(-50%, -50%); /* Центрирование */
+            z-index: 1; /* Поверх других элементов */
+            display: none; /* Изначально скрываем */
+        }
+
+        .message p {
+            border-bottom: 2px solid red; /* Тонкая зеленая полоска под текстом */
+            padding-bottom: 5px; /* Отступ снизу текста */
+            margin-bottom: 5px; /* Отступ снизу всего блока сообщения */
+        }
     </style>
 </head>
 <body>
@@ -80,6 +103,12 @@
 <div class="menu">
     <a href="/">HOME</a>
 </div>
+
+{{ if .ShowMessage }}
+<div class="message" id="messageID">
+    <p>{{ .Message }}</p>
+</div>
+{{ end }}
 
 <div class="container">
     <h1>Find order!</h1>
@@ -91,6 +120,16 @@
     </form>
 
 </div>
+
+<script>
+    var messageID = document.getElementById("messageID");
+    messageID.style.display = "block"; // Показываем блок
+
+    setTimeout(function() {
+        messageID.style.display = "none"; // Скрываем блок через 2 секунды
+    }, 2000); // 2 секунды
+</script>
+
 </body>
 </html>
 

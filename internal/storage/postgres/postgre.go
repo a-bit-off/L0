@@ -6,6 +6,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq" // Импортируем драйвер PostgreSQL
 	"log"
+	"strings"
 )
 
 type Storage struct {
@@ -66,13 +67,16 @@ func (s Storage) AddOrder(id, order string) error {
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
+	defer stmt.Close()
 
-	_, err = stmt.Exec(id, []byte(order))
+	_, err = stmt.Exec(id, order)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			// Обработка случая с дублированным ключом
-			return fmt.Errorf("duplicate key: %s: %w", op, err)
+		if strings.Contains(err.Error(), "invalid input syntax for type json") {
+			return fmt.Errorf("Order not a json!")
+		} else if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			return fmt.Errorf("Not a unique ID!")
 		}
+
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
