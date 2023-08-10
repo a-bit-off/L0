@@ -70,7 +70,7 @@ func initHandlers(cfg *config.Config, router *chi.Mux, storage *postgres.Storage
 	router.Get("/add", handlers.AddOrderPage(""))
 	router.Post("/add", handlers.AddOrder(storage))
 
-	// TODO: FIND
+	// FIND
 	router.Get("/find", handlers.FindOrderByIDPage(""))
 	router.Post("/find", handlers.FindOrderByID(storage))
 

@@ -16,6 +16,8 @@ type AddPageData struct {
 	Message     string
 }
 
+// Создание нового кэша с дефолтными настройками
+
 // GET
 func AddOrderPage(message string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
