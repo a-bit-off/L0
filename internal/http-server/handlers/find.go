@@ -1,12 +1,14 @@
 package handlers
 
 import (
-	"L0/internal/storage/postgres"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
+
+	"L0/internal/cache"
+	"L0/internal/storage/postgres"
 )
 
 type FindPageData struct {
@@ -40,7 +42,7 @@ func FindOrderByIDPage(message string) http.HandlerFunc {
 }
 
 // POST
-func FindOrderByID(storage *postgres.Storage) http.HandlerFunc {
+func FindOrderByID(storage *postgres.Storage, cache *cache.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		orderID := r.FormValue("orderID")
@@ -49,12 +51,23 @@ func FindOrderByID(storage *postgres.Storage) http.HandlerFunc {
 			FindOrderByIDPage("Field must be filled!")(w, r) // Повторно отображаем страницу с предупреждением
 			return
 		}
-
-		jsonB, err := storage.GetById(orderID)
-		if err != nil {
-			log.Println(fmt.Errorf("Error getting data from database: %s", err))
-			http.Error(w, "Error getting data from database", http.StatusInternalServerError)
-			return
+		var jsonB []byte
+		order, ok := cache.Get(orderID)
+		if ok {
+			if jsonB, ok = order.([]byte); ok {
+				log.Println("Get order from cache")
+			} else {
+				log.Println("Failed to convert []byte")
+				http.Error(w, "Error getting data from cache", http.StatusInternalServerError)
+			}
+		} else {
+			var err error
+			jsonB, err = storage.GetById(orderID)
+			if err != nil {
+				log.Println(fmt.Errorf("Error getting data from database: %s", err))
+				http.Error(w, "Error getting data from database", http.StatusInternalServerError)
+				return
+			}
 		}
 
 		if jsonB == nil {

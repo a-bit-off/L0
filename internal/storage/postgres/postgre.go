@@ -63,7 +63,7 @@ func (s Storage) GetById(id string) ([]byte, error) {
 func (s Storage) GetAll() (map[string][]byte, error) {
 	const op = "storage.postgres.GetAll"
 
-	var all map[string][]byte
+	all := make(map[string][]byte)
 	rows, err := s.db.Query(storage.GetAllFromOrders)
 	if err != nil {
 		if err != sql.ErrNoRows {

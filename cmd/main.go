@@ -77,22 +77,12 @@ func initHandlers(router *chi.Mux, storage *postgres.Storage, cache *cache.Cache
 	// HOME
 	router.Get("/", handlers.HomePage)
 
-	// ADD
-<<<<<<< HEAD
-	router.Get("/add", handlers.AddOrderPage)
+	router.Get("/add", handlers.AddOrderPage(""))
 	router.Post("/add", handlers.AddOrder(storage, cache))
 
 	// FIND
-	router.Get("/find", handlers.FindOrderByIDPage)
-	router.Post("/find", handlers.FindOrderByID(storage, cache))
-=======
-	router.Get("/add", handlers.AddOrderPage(""))
-	router.Post("/add", handlers.AddOrder(storage))
-
-	// FIND
 	router.Get("/find", handlers.FindOrderByIDPage(""))
-	router.Post("/find", handlers.FindOrderByID(storage))
->>>>>>> b8a4feee55ef692e953d26d5cd82311829fbf710
+	router.Post("/find", handlers.FindOrderByID(storage, cache))
 
 	// ORDER DETAILS
 	router.Get("/order", handlers.OrderDetailsPage(nil))

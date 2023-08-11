@@ -47,7 +47,7 @@ func AddOrderPage(message string) http.HandlerFunc {
 }
 
 // POST
-func AddOrder(storage *postgres.Storage, cache cache.Cache) http.HandlerFunc {
+func AddOrder(storage *postgres.Storage, cache *cache.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		orderID := r.FormValue("orderID")
@@ -61,11 +61,14 @@ func AddOrder(storage *postgres.Storage, cache cache.Cache) http.HandlerFunc {
 		// Add to storage
 		err := storage.AddOrder(orderID, orderInfo)
 		if err != nil {
-
 			log.Println(err)
 			AddOrderPage(err.Error())(w, r)
 			return
 		}
+
+		// Add to cache
+		cache.SetDefault(orderID, orderInfo)
+		log.Println("Order added to cache successfully!")
 
 		AddOrderPage("Order added successfully!")(w, r)
 	}
