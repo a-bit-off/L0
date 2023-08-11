@@ -10,24 +10,32 @@ import (
 )
 
 type FindPageData struct {
-	OrderID string
+	OrderID     string
+	ShowMessage bool
+	Message     string
 }
 
 // GET
-func FindOrderByIDPage(w http.ResponseWriter, r *http.Request) {
-	orderID := r.URL.Query().Get("orderID")
-	data := FindPageData{OrderID: orderID}
+func FindOrderByIDPage(message string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		orderID := r.URL.Query().Get("orderID")
+		var showMessage bool
+		if message != "" {
+			showMessage = true
+		}
+		data := FindPageData{OrderID: orderID, ShowMessage: showMessage, Message: message}
 
-	lp := filepath.Join("public", "html", "find.html")
-	tmpl, err := template.ParseFiles(lp)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	err = tmpl.Execute(w, data)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		lp := filepath.Join("public", "html", "find.html")
+		tmpl, err := template.ParseFiles(lp)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -38,7 +46,7 @@ func FindOrderByID(storage *postgres.Storage) http.HandlerFunc {
 		orderID := r.FormValue("orderID")
 
 		if orderID == "" {
-			FindOrderByIDPage(w, r) // Повторно отображаем страницу с предупреждением
+			FindOrderByIDPage("Field must be filled!")(w, r) // Повторно отображаем страницу с предупреждением
 			return
 		}
 
@@ -50,7 +58,7 @@ func FindOrderByID(storage *postgres.Storage) http.HandlerFunc {
 		}
 
 		if jsonB == nil {
-			http.Error(w, "Record not found", http.StatusNotFound)
+			FindOrderByIDPage("Nothing found for this id!")(w, r) // Повторно отображаем страницу с предупреждением
 			return
 		}
 

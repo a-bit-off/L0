@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 
@@ -10,26 +12,37 @@ import (
 )
 
 type AddPageData struct {
-	OrderID   string
-	OrderInfo string
+	OrderID     string
+	OrderInfo   string
+	ShowMessage bool
+	Message     string
 }
 
-// GET
-func AddOrderPage(w http.ResponseWriter, r *http.Request) {
-	orderID := r.URL.Query().Get("orderID")
-	orderInfo := r.URL.Query().Get("orderInfo")
-	data := AddPageData{OrderID: orderID, OrderInfo: orderInfo}
+// Создание нового кэша с дефолтными настройками
 
-	lp := filepath.Join("public", "html", "add.html")
-	tmpl, err := template.ParseFiles(lp)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	err = tmpl.Execute(w, data)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+// GET
+func AddOrderPage(message string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		orderID := r.URL.Query().Get("orderID")
+		orderInfo := r.URL.Query().Get("orderInfo")
+		var showMessage bool
+		if message != "" {
+			showMessage = true
+		}
+
+		data := AddPageData{OrderID: orderID, OrderInfo: orderInfo, ShowMessage: showMessage, Message: message}
+
+		lp := filepath.Join("public", "html", "add.html")
+		tmpl, err := template.ParseFiles(lp)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Internal Server Error: %s", err), http.StatusInternalServerError)
+			return
+		}
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -41,17 +54,19 @@ func AddOrder(storage *postgres.Storage, cache cache.Cache) http.HandlerFunc {
 		orderInfo := r.FormValue("orderInfo")
 
 		if orderID == "" || orderInfo == "" {
-			AddOrderPage(w, r) // Повторно отображаем страницу с предупреждением
+			AddOrderPage("All fields must be filled!")(w, r)
 			return
 		}
 
 		// Add to storage
 		err := storage.AddOrder(orderID, orderInfo)
 		if err != nil {
-			http.Error(w, "Error with add order", http.StatusInternalServerError)
+
+			log.Println(err)
+			AddOrderPage(err.Error())(w, r)
 			return
 		}
 
-		// TODO: Дать понять что все ок!
+		AddOrderPage("Order added successfully!")(w, r)
 	}
 }
