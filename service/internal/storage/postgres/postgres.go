@@ -1,12 +1,14 @@
 package postgres
 
 import (
-	"L0/internal/storage"
 	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq" // Импортируем драйвер PostgreSQL
 	"log"
 	"strings"
+
+	_ "github.com/lib/pq" // Импортируем драйвер PostgresSQL
+
+	"service/internal/storage"
 )
 
 type Storage struct {
@@ -14,7 +16,7 @@ type Storage struct {
 }
 
 func New(connectionString string) (*Storage, error) {
-	const op = "L0/internal/storage/postgres.New"
+	const op = "internal/storage/postgres.New"
 
 	// Строка подключения к базе данных
 	db, err := sql.Open("postgres", connectionString)
@@ -57,6 +59,8 @@ func (s Storage) GetById(id string) ([]byte, error) {
 		}
 	}
 
+	log.Println("Get order by id successful!")
+
 	return jsonB, nil
 }
 
@@ -86,6 +90,8 @@ func (s Storage) GetAll() (map[string][]byte, error) {
 		return all, fmt.Errorf("%s: %s", op, err)
 	}
 
+	log.Println("Get all orders successful!")
+
 	return all, nil
 }
 
@@ -108,7 +114,8 @@ func (s Storage) AddOrder(id, order string) error {
 
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	defer stmt.Close()
+
+	log.Println("Add order successful!")
 
 	return nil
 }

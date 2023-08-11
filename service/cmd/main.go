@@ -1,27 +1,36 @@
 package main
 
 import (
-	"L0/internal/cache"
+	"context"
 	"flag"
 	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"service/natsStreaming"
 	"sync"
+	"syscall"
 
-	"L0/internal/config"
-	"L0/internal/http-server/handlers"
-	"L0/internal/storage/postgres"
+	"service/internal/cache"
+	"service/internal/config"
+	"service/internal/http-server/handlers"
+	"service/internal/storage/postgres"
 )
 
 func main() {
-	// sync
+	// init config: cleanenv
+	cfg := initConfig()
+
+	// init sync
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	// init config: cleanenv
-	cfg := initConfig()
+	// init context
+	//ctx, cancel := initContext()
+	//defer cancel()
 
 	// init storage: postgres
 	storage := initStorage(cfg)
@@ -33,13 +42,14 @@ func main() {
 	initMiddleware(router)
 
 	// init cache go-cache
-	cache, err := cache.New(storage, &wg)
-	if err != nil {
-		log.Println("Can not init cache")
-	}
+	//cache := initCache(ctx, storage, &wg)
+	var cache *cache.Cache
 
 	// init handlers
 	initHandlers(router, storage, cache)
+
+	// init nats-streaming
+	//initNatsStreaming(ctx, &wg, cache)
 
 	// run server
 	runServer(cfg, router)
@@ -49,6 +59,22 @@ func initConfig() *config.Config {
 	configPath := flag.String("CONFIG_PATH", "", "path to config")
 	flag.Parse()
 	return config.MustLoad(*configPath)
+}
+
+func initContext() (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		// Дождитесь сигнала для остановки
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		<-sigChan
+
+		cancel()
+
+	}()
+
+	return ctx, cancel
 }
 
 func initStorage(cfg *config.Config) *postgres.Storage {
@@ -73,6 +99,14 @@ func initMiddleware(router chi.Router) {
 	router.Use(middleware.URLFormat) // обработка url
 }
 
+func initCache(ctx context.Context, storage *postgres.Storage, wg *sync.WaitGroup) *cache.Cache {
+	cache, err := cache.New(ctx, storage, wg)
+	if err != nil {
+		log.Println("Can not init cache")
+	}
+	return cache
+}
+
 func initHandlers(router *chi.Mux, storage *postgres.Storage, cache *cache.Cache) {
 	// HOME
 	router.Get("/", handlers.HomePage)
@@ -86,6 +120,18 @@ func initHandlers(router *chi.Mux, storage *postgres.Storage, cache *cache.Cache
 
 	// ORDER DETAILS
 	router.Get("/order", handlers.OrderDetailsPage(nil))
+}
+
+func initNatsStreaming(ctx context.Context, wg *sync.WaitGroup, cache *cache.Cache) {
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer fmt.Println("Shutting down...")
+		defer wg.Done()
+
+		if err := natsStreaming.RunNatsStreaming(ctx); err != nil {
+			log.Println(err)
+		}
+	}(wg)
 }
 
 func runServer(cfg *config.Config, router *chi.Mux) {

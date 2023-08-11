@@ -2,17 +2,19 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
 
-	"L0/internal/http-server/model"
+	"service/internal/http-server/model"
 )
 
 func OrderDetailsPage(jsonB []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.order.OrderDetailsPage"
+
 		var data model.Model
 
 		json.NewDecoder(strings.NewReader(string(jsonB))).Decode(&data)
@@ -20,14 +22,18 @@ func OrderDetailsPage(jsonB []byte) http.HandlerFunc {
 		lp := filepath.Join("public", "html", "orderDetails.html")
 		tmpl, err := template.ParseFiles(lp)
 		if err != nil {
+			log.Printf("%s: %s\n", op, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
+
 		err = tmpl.Execute(w, data)
 		if err != nil {
-			fmt.Println("Template Execution Error:", err)
+			log.Printf("%s: %s\n", op, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
+
+		log.Println("Template order.html executed successful!")
 	}
 }

@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
 
-	"L0/internal/cache"
-	"L0/internal/storage/postgres"
+	"service/internal/cache"
+	"service/internal/storage/postgres"
 )
 
 type FindPageData struct {
@@ -20,6 +19,8 @@ type FindPageData struct {
 // GET
 func FindOrderByIDPage(message string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.find.FindOrderByIDPage"
+
 		orderID := r.URL.Query().Get("orderID")
 		var showMessage bool
 		if message != "" {
@@ -30,20 +31,27 @@ func FindOrderByIDPage(message string) http.HandlerFunc {
 		lp := filepath.Join("public", "html", "find.html")
 		tmpl, err := template.ParseFiles(lp)
 		if err != nil {
+			log.Printf("%s: %s\n", op, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
+
 		err = tmpl.Execute(w, data)
 		if err != nil {
+			log.Printf("%s: %s\n", op, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
+
+		log.Println("Template find.html executed successful!")
 	}
 }
 
 // POST
 func FindOrderByID(storage *postgres.Storage, cache *cache.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.find.FindOrderByID"
+
 		r.ParseForm()
 		orderID := r.FormValue("orderID")
 
@@ -55,16 +63,16 @@ func FindOrderByID(storage *postgres.Storage, cache *cache.Cache) http.HandlerFu
 		order, ok := cache.Get(orderID)
 		if ok {
 			if jsonB, ok = order.([]byte); ok {
-				log.Println("Get order from cache")
+				log.Println("Get order from cache successful!")
 			} else {
 				log.Println("Failed to convert []byte")
-				http.Error(w, "Error getting data from cache", http.StatusInternalServerError)
+				http.Error(w, "Error getting data from cache", http.StatusInternalServerError) // TODO
 			}
 		} else {
 			var err error
 			jsonB, err = storage.GetById(orderID)
 			if err != nil {
-				log.Println(fmt.Errorf("Error getting data from database: %s", err))
+				log.Printf("%s: %s\n", op, err)
 				http.Error(w, "Error getting data from database", http.StatusInternalServerError)
 				return
 			}
@@ -74,6 +82,8 @@ func FindOrderByID(storage *postgres.Storage, cache *cache.Cache) http.HandlerFu
 			FindOrderByIDPage("Nothing found for this id!")(w, r) // Повторно отображаем страницу с предупреждением
 			return
 		}
+
+		log.Println("Find order by ID page successful!")
 
 		OrderDetailsPage(jsonB)(w, r)
 	}
