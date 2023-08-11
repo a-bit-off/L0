@@ -1,10 +1,12 @@
 package handlers
 
 import (
-	"L0/internal/storage/postgres"
 	"html/template"
 	"net/http"
 	"path/filepath"
+
+	"L0/internal/cache"
+	"L0/internal/storage/postgres"
 )
 
 type AddPageData struct {
@@ -32,17 +34,18 @@ func AddOrderPage(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST
-func AddOrder(storage *postgres.Storage) http.HandlerFunc {
+func AddOrder(storage *postgres.Storage, cache cache.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		orderID := r.FormValue("orderID")
 		orderInfo := r.FormValue("orderInfo")
 
 		if orderID == "" || orderInfo == "" {
-			AddOrderPage(w, r) // TODO: Повторно отображаем страницу с предупреждением
+			AddOrderPage(w, r) // Повторно отображаем страницу с предупреждением
 			return
 		}
 
+		// Add to storage
 		err := storage.AddOrder(orderID, orderInfo)
 		if err != nil {
 			http.Error(w, "Error with add order", http.StatusInternalServerError)

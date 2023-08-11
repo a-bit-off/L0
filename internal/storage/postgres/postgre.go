@@ -59,6 +59,35 @@ func (s Storage) GetById(id string) ([]byte, error) {
 	return jsonB, nil
 }
 
+func (s Storage) GetAll() (map[string][]byte, error) {
+	const op = "storage.postgres.GetAll"
+
+	var all map[string][]byte
+	rows, err := s.db.Query(storage.GetAllFromOrders)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return all, fmt.Errorf("%s: %s", op, err)
+		}
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id string
+		var jsonB []byte
+
+		if err = rows.Scan(&id, &jsonB); err != nil {
+			return all, fmt.Errorf("%s: %s", op, err)
+		}
+		all[id] = jsonB
+	}
+
+	if err = rows.Err(); err != nil {
+		return all, fmt.Errorf("%s: %s", op, err)
+	}
+
+	return all, nil
+}
+
 func (s Storage) AddOrder(id, order string) error {
 	const op = "storage.sqlite.SaveURL"
 
@@ -75,6 +104,7 @@ func (s Storage) AddOrder(id, order string) error {
 		}
 		return fmt.Errorf("%s: %w", op, err)
 	}
+	defer stmt.Close()
 
 	return nil
 }

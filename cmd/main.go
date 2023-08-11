@@ -1,20 +1,25 @@
 package main
 
 import (
-	"L0/internal/http-server/handlers"
+	"L0/internal/cache"
 	"flag"
 	"fmt"
-	"log"
-	"net/http"
-
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"log"
+	"net/http"
+	"sync"
 
 	"L0/internal/config"
+	"L0/internal/http-server/handlers"
 	"L0/internal/storage/postgres"
 )
 
 func main() {
+	// sync
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	// init config: cleanenv
 	cfg := initConfig()
 
@@ -27,8 +32,14 @@ func main() {
 	// init middleware: chi Mux, middleware
 	initMiddleware(router)
 
+	// init cache go-cache
+	cache, err := cache.New(storage, &wg)
+	if err != nil {
+		log.Println("Can not init cache")
+	}
+
 	// init handlers
-	initHandlers(cfg, router, storage)
+	initHandlers(router, storage, cache)
 
 	// run server
 	runServer(cfg, router)
@@ -62,17 +73,17 @@ func initMiddleware(router chi.Router) {
 	router.Use(middleware.URLFormat) // обработка url
 }
 
-func initHandlers(cfg *config.Config, router *chi.Mux, storage *postgres.Storage) {
+func initHandlers(router *chi.Mux, storage *postgres.Storage, cache *cache.Cache) {
 	// HOME
 	router.Get("/", handlers.HomePage)
 
-	// TODO: ADD
+	// ADD
 	router.Get("/add", handlers.AddOrderPage)
-	router.Post("/add", handlers.AddOrder(storage))
+	router.Post("/add", handlers.AddOrder(storage, cache))
 
 	// FIND
 	router.Get("/find", handlers.FindOrderByIDPage)
-	router.Post("/find", handlers.FindOrderByID(storage))
+	router.Post("/find", handlers.FindOrderByID(storage, cache))
 
 	// ORDER DETAILS
 	router.Get("/order", handlers.OrderDetailsPage(nil))
