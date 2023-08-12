@@ -36,7 +36,6 @@ func main() {
 
 	// init cache go-cache
 	cache := initCache(storage, &wg)
-	//var cache *cache.Cache
 
 	// init handlers
 	initHandlers(router, storage, cache)

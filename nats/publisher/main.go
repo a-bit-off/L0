@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	path := "../models"
+	path := "models"
 	channel := "test"
 
 	sc, err := stan.Connect("test-cluster", "publisher-client", stan.NatsURL("nats://localhost:4222"))
