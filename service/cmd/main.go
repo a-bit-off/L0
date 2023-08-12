@@ -19,41 +19,41 @@ import (
 
 func main() {
 	// init config: cleanenv
-	cfg := initConfig()
+	cfg := InitConfig()
 
 	// init sync
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
 	// init storage: postgres
-	storage := initStorage(cfg)
+	storage := InitStorage(cfg)
 
 	// init router: chi, chi render
 	router := chi.NewRouter()
 
 	// init middleware: chi Mux, middleware
-	initMiddleware(router)
+	InitMiddleware(router)
 
 	// init cache go-cache
-	cache := initCache(storage, &wg)
+	cache := InitCache(storage, &wg)
 
 	// init handlers
-	initHandlers(router, storage, cache)
+	InitHandlers(router, storage, cache)
 
 	// init nats-streaming
-	initNatsStreaming(&wg, storage, cache)
+	InitNatsStreaming(&wg, storage, cache)
 
 	// run server
-	runServer(cfg, router)
+	RunServer(cfg, router)
 }
 
-func initConfig() *config.Config {
+func InitConfig() *config.Config {
 	configPath := flag.String("CONFIG_PATH", "", "path to config")
 	flag.Parse()
 	return config.MustLoad(*configPath)
 }
 
-func initStorage(cfg *config.Config) *postgres.Storage {
+func InitStorage(cfg *config.Config) *postgres.Storage {
 	connectionString := fmt.Sprintf(
 		"host=%s port=%d user=%s dbname=%s sslmode=%s",
 		cfg.Database.Host, cfg.Database.Port, cfg.Database.User,
@@ -68,14 +68,14 @@ func initStorage(cfg *config.Config) *postgres.Storage {
 	return storage
 }
 
-func initMiddleware(router chi.Router) {
+func InitMiddleware(router chi.Router) {
 	router.Use(middleware.RequestID) //
 	router.Use(middleware.Logger)    //
 	router.Use(middleware.Recoverer) // обработка panic в handler
 	router.Use(middleware.URLFormat) // обработка url
 }
 
-func initCache(storage *postgres.Storage, wg *sync.WaitGroup) *cache.Cache {
+func InitCache(storage *postgres.Storage, wg *sync.WaitGroup) *cache.Cache {
 	cache, err := cache.New(storage, wg)
 	if err != nil {
 		log.Println("Can not init cache")
@@ -83,7 +83,7 @@ func initCache(storage *postgres.Storage, wg *sync.WaitGroup) *cache.Cache {
 	return cache
 }
 
-func initHandlers(router *chi.Mux, storage *postgres.Storage, cache *cache.Cache) {
+func InitHandlers(router *chi.Mux, storage *postgres.Storage, cache *cache.Cache) {
 	// HOME
 	router.Get("/", handlers.HomePage)
 
@@ -98,7 +98,7 @@ func initHandlers(router *chi.Mux, storage *postgres.Storage, cache *cache.Cache
 	router.Get("/order", handlers.OrderDetailsPage(nil))
 }
 
-func initNatsStreaming(wg *sync.WaitGroup, storage *postgres.Storage, cache *cache.Cache) {
+func InitNatsStreaming(wg *sync.WaitGroup, storage *postgres.Storage, cache *cache.Cache) {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer fmt.Println("Shutting down...")
@@ -110,7 +110,7 @@ func initNatsStreaming(wg *sync.WaitGroup, storage *postgres.Storage, cache *cac
 	}(wg)
 }
 
-func runServer(cfg *config.Config, router *chi.Mux) {
+func RunServer(cfg *config.Config, router *chi.Mux) {
 	log.Printf("starting server\naddress: %s", cfg.HttpServer.Address)
 
 	srv := &http.Server{
