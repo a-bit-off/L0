@@ -2,8 +2,9 @@ package natsStreaming
 
 import (
 	"encoding/json"
-	"github.com/nats-io/stan.go"
 	"log"
+
+	"github.com/nats-io/stan.go"
 
 	"service/internal/cache"
 	"service/internal/http-server/model"
@@ -27,7 +28,9 @@ func RunNatsStreaming(storage *postgres.Storage, cache *cache.Cache) error {
 	subject := "test"
 
 	_, err = sc.Subscribe(subject, func(m *stan.Msg) {
-		handleMessage(storage, cache, m)
+		if err = handleMessage(storage, cache, m); err != nil {
+			return
+		}
 	}, stan.StartWithLastReceived())
 	if err != nil {
 		log.Printf("%s: %v", op, err)
@@ -40,18 +43,21 @@ func RunNatsStreaming(storage *postgres.Storage, cache *cache.Cache) error {
 	return nil
 }
 
-func handleMessage(storage *postgres.Storage, cache *cache.Cache, m *stan.Msg) {
-	log.Printf("Received a message: %s\n", string(m.Data))
+func handleMessage(storage *postgres.Storage, cache *cache.Cache, m *stan.Msg) error {
 
 	var model model.Model
 	err := json.Unmarshal(m.Data, &model)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 
 	if err = storage.AddOrder(model.OrderUID, string(m.Data)); err != nil {
-		log.Println(err)
+		return err
 	}
 
 	cache.SetDefault(model.OrderUID, model)
+
+	log.Printf("Received a message: %s\n", model.OrderUID)
+
+	return nil
 }

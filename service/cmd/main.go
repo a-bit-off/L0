@@ -3,16 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 	"log"
 	"net/http"
+	"sync"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+
 	"service/internal/cache"
 	"service/internal/config"
 	"service/internal/http-server/handlers"
 	"service/internal/storage/postgres"
 	"service/natsStreaming"
-	"sync"
 )
 
 func main() {
