@@ -66,14 +66,14 @@ func FindOrderByID(storage *postgres.Storage, cache *cache.Cache) http.HandlerFu
 				log.Println("Get order from cache successful!")
 			} else {
 				log.Println("Failed to convert []byte")
-				http.Error(w, "Error getting data from cache", http.StatusInternalServerError) // TODO
+				FindOrderByIDPage("Error getting data from cache!")(w, r)
 			}
 		} else {
 			var err error
 			jsonB, err = storage.GetById(orderID)
 			if err != nil {
 				log.Printf("%s: %s\n", op, err)
-				http.Error(w, "Error getting data from database", http.StatusInternalServerError)
+				FindOrderByIDPage("Error getting data from database!")(w, r)
 				return
 			}
 		}

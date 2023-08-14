@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
+	"service/internal/http-server/model"
 	"strings"
 
 	_ "github.com/lib/pq" // Импортируем драйвер PostgresSQL
@@ -95,8 +97,17 @@ func (s Storage) GetAll() (map[string][]byte, error) {
 	return all, nil
 }
 
-func (s Storage) AddOrder(id, order string) error {
+func (s Storage) AddOrder(order model.Model) error {
 	const op = "storage.sqlite.SaveURL"
+
+	if order.OrderUID == "" {
+		return fmt.Errorf("%s: orderUID is empty\n", op)
+	}
+
+	byt, err := json.Marshal(order)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
 	stmt, err := s.db.Prepare(storage.InsertIntoOrders)
 	if err != nil {
@@ -104,7 +115,7 @@ func (s Storage) AddOrder(id, order string) error {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(id, order)
+	_, err = stmt.Exec(order.OrderUID, byt)
 	if err != nil {
 		if strings.Contains(err.Error(), "invalid input syntax for type json") {
 			return fmt.Errorf("Order not a json!")

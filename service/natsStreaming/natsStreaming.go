@@ -44,20 +44,23 @@ func RunNatsStreaming(storage *postgres.Storage, cache *cache.Cache) error {
 }
 
 func handleMessage(storage *postgres.Storage, cache *cache.Cache, m *stan.Msg) error {
-
-	var model model.Model
-	err := json.Unmarshal(m.Data, &model)
+	var order model.Model
+	err := json.Unmarshal(m.Data, &order)
 	if err != nil {
 		return err
 	}
 
-	if err = storage.AddOrder(model.OrderUID, string(m.Data)); err != nil {
+	if err = storage.AddOrder(order); err != nil {
 		return err
 	}
 
-	cache.SetDefault(model.OrderUID, model)
+	byt, err := json.Marshal(order)
+	if err != nil {
+		return err
+	}
+	cache.SetDefault(order.OrderUID, byt)
 
-	log.Printf("Received a message: %s\n", model.OrderUID)
+	log.Printf("Received a message: %s\n", order.OrderUID)
 
 	return nil
 }
